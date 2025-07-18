@@ -1,4 +1,5 @@
 import React from 'react';
+import { useAuth } from '../contexts/AuthContext';
 import { User } from '../types';
 import { Users, Calendar, MessageSquare, BarChart3, Bell, LogOut, Settings, Moon, Sun } from 'lucide-react';
 import { useSettings } from '../contexts/SettingsContext';
@@ -12,6 +13,7 @@ interface LayoutProps {
 
 const Layout: React.FC<LayoutProps> = ({ children, currentUser, activeTab, onTabChange }) => {
   const { theme, toggleTheme } = useSettings();
+  const { logout } = useAuth();
 
   const organizerTabs = [
     { id: 'dashboard', label: 'Dashboard', icon: BarChart3 },
@@ -68,7 +70,11 @@ const Layout: React.FC<LayoutProps> = ({ children, currentUser, activeTab, onTab
                   <p className="text-xs text-gray-500 dark:text-gray-400 capitalize">{currentUser.role}</p>
                 </div>
               </div>
-              <button className="p-2 text-gray-400 hover:text-gray-600 dark:text-gray-300 dark:hover:text-gray-100 transition-colors">
+              <button 
+                onClick={logout}
+                className="p-2 text-gray-400 hover:text-gray-600 dark:text-gray-300 dark:hover:text-gray-100 transition-colors"
+                title="Sign out"
+              >
                 <LogOut className="h-5 w-5" />
               </button>
             </div>

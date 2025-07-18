@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { SettingsProvider } from './contexts/SettingsContext';
+import AuthPage from './components/auth/AuthPage';
 import Layout from './components/Layout';
 import Dashboard from './components/organizer/Dashboard';
 import EventsManager from './components/organizer/EventsManager';
@@ -12,19 +14,33 @@ import Announcements from './components/volunteer/Announcements';
 import { mockUsers } from './data/mockData';
 import { User } from './types';
 
-function App() {
-  // For demo purposes, we'll simulate switching between user roles
-  const [currentUserIndex, setCurrentUserIndex] = useState(0);
+const AppContent: React.FC = () => {
+  const { currentUser, isAuthenticated, isLoading } = useAuth();
   const [activeTab, setActiveTab] = useState('dashboard');
 
-  const currentUser = mockUsers[currentUserIndex];
+  // Show loading spinner while checking authentication
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-400">Loading CrewSync...</p>
+        </div>
+      </div>
+    );
+  }
 
-  // Reset active tab when switching users
-  const handleUserSwitch = (index: number) => {
-    setCurrentUserIndex(index);
-    setActiveTab(mockUsers[index].role === 'organizer' ? 'dashboard' : 'my-shifts');
-  };
+  // Show auth page if not authenticated
+  if (!isAuthenticated || !currentUser) {
+    return <AuthPage />;
+  }
 
+  // Set default tab based on user role
+  React.useEffect(() => {
+    if (currentUser) {
+      setActiveTab(currentUser.role === 'organizer' ? 'dashboard' : 'my-shifts');
+    }
+  }, [currentUser]);
   const renderContent = () => {
     if (currentUser.role === 'organizer') {
       switch (activeTab) {
@@ -58,39 +74,23 @@ function App() {
   };
 
   return (
-    <SettingsProvider>
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
-        {/* Demo User Switcher */}
-        <div className="bg-gray-900 dark:bg-gray-950 text-white p-3">
-          <div className="max-w-7xl mx-auto flex items-center justify-between">
-            <span className="text-sm font-medium">Demo Mode - Switch Users:</span>
-            <div className="flex space-x-2">
-              {mockUsers.map((user, index) => (
-                <button
-                  key={user.id}
-                  onClick={() => handleUserSwitch(index)}
-                  className={`px-3 py-1 rounded text-sm transition-colors ${
-                    currentUserIndex === index
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                  }`}
-                >
-                  {user.name} ({user.role})
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
+    <Layout 
+      currentUser={currentUser} 
+      activeTab={activeTab} 
+      onTabChange={setActiveTab}
+    >
+      {renderContent()}
+    </Layout>
+  );
+};
 
-        <Layout 
-          currentUser={currentUser} 
-          activeTab={activeTab} 
-          onTabChange={setActiveTab}
-        >
-          {renderContent()}
-        </Layout>
-      </div>
-    </SettingsProvider>
+function App() {
+  return (
+    <AuthProvider>
+      <SettingsProvider>
+        <AppContent />
+      </SettingsProvider>
+    </AuthProvider>
   );
 }
 
