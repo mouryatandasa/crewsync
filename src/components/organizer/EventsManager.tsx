@@ -1,11 +1,28 @@
 import React, { useState } from 'react';
-import { mockEvents, mockShifts } from '../../data/mockData';
+import { mockEvents, mockShifts, mockUsers } from '../../data/mockData';
 import { Event } from '../../types';
-import { Calendar, MapPin, Users, Plus, Clock, Edit3 } from 'lucide-react';
+import { Calendar, MapPin, Users, Plus, Clock, Edit3, Eye } from 'lucide-react';
+import CreateEventModal from './CreateEventModal';
+import EventTasksModal from './EventTasksModal';
 
 const EventsManager: React.FC = () => {
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
-  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showTasksModal, setShowTasksModal] = useState(false);
+  const [events, setEvents] = useState(mockEvents);
+
+  const handleCreateEvent = (eventData: Omit<Event, 'id'>) => {
+    const newEvent: Event = {
+      ...eventData,
+      id: (events.length + 1).toString(),
+    };
+    setEvents([...events, newEvent]);
+  };
+
+  const handleViewTasks = (event: Event) => {
+    setSelectedEvent(event);
+    setShowTasksModal(true);
+  };
 
   const getEventShifts = (eventId: string) => {
     return mockShifts.filter(shift => shift.eventId === eventId);
@@ -29,7 +46,7 @@ const EventsManager: React.FC = () => {
           <p className="mt-2 text-gray-600">Create and manage your events and shifts</p>
         </div>
         <button
-          onClick={() => setShowCreateForm(true)}
+          onClick={() => setShowCreateModal(true)}
           className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2"
         >
           <Plus className="h-5 w-5" />
@@ -45,7 +62,7 @@ const EventsManager: React.FC = () => {
               <h3 className="text-lg font-semibold text-gray-900">Your Events</h3>
             </div>
             <div className="divide-y divide-gray-200">
-              {mockEvents.map((event) => (
+              {events.map((event) => (
                 <div
                   key={event.id}
                   onClick={() => setSelectedEvent(event)}
@@ -53,20 +70,34 @@ const EventsManager: React.FC = () => {
                     selectedEvent?.id === event.id ? 'bg-blue-50 border-r-4 border-blue-500' : ''
                   }`}
                 >
-                  <div className="flex justify-between items-start mb-2">
-                    <h4 className="font-medium text-gray-900 text-sm">{event.name}</h4>
-                    <span className={getStatusBadge(event.status)}>
-                      {event.status}
-                    </span>
-                  </div>
-                  <div className="space-y-1 text-xs text-gray-600">
-                    <div className="flex items-center space-x-1">
-                      <Calendar className="h-3 w-3" />
-                      <span>{new Date(event.date).toLocaleDateString()}</span>
+                  <div className="flex justify-between items-start mb-3">
+                    <div className="flex-1">
+                      <h4 className="font-medium text-gray-900 text-sm">{event.name}</h4>
+                      <div className="space-y-1 text-xs text-gray-600 mt-2">
+                        <div className="flex items-center space-x-1">
+                          <Calendar className="h-3 w-3" />
+                          <span>{new Date(event.date).toLocaleDateString()}</span>
+                        </div>
+                        <div className="flex items-center space-x-1">
+                          <MapPin className="h-3 w-3" />
+                          <span>{event.location}</span>
+                        </div>
+                      </div>
                     </div>
-                    <div className="flex items-center space-x-1">
-                      <MapPin className="h-3 w-3" />
-                      <span>{event.location}</span>
+                    <div className="flex flex-col items-end space-y-2">
+                      <span className={getStatusBadge(event.status)}>
+                        {event.status}
+                      </span>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleViewTasks(event);
+                        }}
+                        className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
+                        title="View Tasks"
+                      >
+                        <Eye className="h-4 w-4" />
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -180,6 +211,22 @@ const EventsManager: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* Create Event Modal */}
+      <CreateEventModal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onCreateEvent={handleCreateEvent}
+      />
+
+      {/* Event Tasks Modal */}
+      {selectedEvent && (
+        <EventTasksModal
+          isOpen={showTasksModal}
+          onClose={() => setShowTasksModal(false)}
+          event={selectedEvent}
+        />
+      )}
     </div>
   );
 };
